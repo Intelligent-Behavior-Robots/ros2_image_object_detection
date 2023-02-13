@@ -14,12 +14,12 @@ ros2 launch image_object_detection image_object_detection_launch.py
 ## Topics
 
 ### Subscriptions
-* *image*: A topic that publishes raw images. Subscribed to using the Image message type.
-* *image/compressed*: A topic that publishes compressed images. Subscribed to using the CompressedImage message type.
+* *image*: A topic that publishes raw images. Subscribed to using the sensor_msgs.msg.Image message type.
+* *image/compressed*: A topic that publishes compressed images. Subscribed to using the sensor_msgs.msg.CompressedImage message type.
 
 ### Publishers
-* *detections*: A topic that publishes object detections. Published using the Detection2DArray message type.
-* *debug_image*: A topic that publishes a debug image with detections drawn on it. Published using the Image message type if publish_debug_image is set to True.
+* *detections*: A topic that publishes object detections. Published using the vision_msgs.msg.Detection2DArray message type.
+* *debug_image*: A topic that publishes a debug image with detections drawn on it. Published using the Image message type if the param ```publish_debug_image``` is set to True.
 
 ## Parameters
 
