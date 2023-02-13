@@ -1,7 +1,6 @@
-
 # Copyright 2023 Intelligent Behavior Robots, Inc.
 #
-# Licensed under the BSD 3-Clause License 
+# Licensed under the BSD 3-Clause License
 #
 # Author: Pablo Iñigo Blasco
 
@@ -29,53 +28,84 @@ from utils.torch_utils import select_device
 from vision_msgs.msg import Detection2DArray, Detection2D
 from ament_index_python.packages import get_package_share_directory
 
-PACKAGE_NAME = 'image_object_detection'
+PACKAGE_NAME = "image_object_detection"
+
 
 class ImageDetectObjectNode(Node):
     def __init__(self):
         super().__init__(PACKAGE_NAME)
 
-        self.model_image_size = self.get_parameter_or('model.image_size', 640)
-        self.confidence = self.get_parameter_or('model.confidence', 0.25)
-        self.iou_threshold = self.get_parameter_or('model.iou_threshold', 0.45)
-        self.model_weights_file = self.get_parameter_or('model.weights_file', os.path.join(get_package_share_directory(PACKAGE_NAME), "yolov7-tiny.pt"))
-        self.device = self.get_parameter_or('model.device', '')
-        self.show_image = self.get_parameter_or('show_image', False)
-        self.publish_debug_image = self.get_parameter_or('publish_debug_image', True)
+        self.model_image_size = self.get_parameter_or("model.image_size", 640)
+        self.confidence = self.get_parameter_or("model.confidence", 0.45)
+        self.iou_threshold = self.get_parameter_or("model.iou_threshold", 0.45)
+        self.model_weights_file = self.get_parameter_or(
+            "model.weights_file",
+            os.path.join(get_package_share_directory(PACKAGE_NAME), "yolov7-tiny.pt"),
+        )
+
+        if not os.path.isfile(self.model_weights_file):
+            self.model_weights_file = os.path.join(
+                get_package_share_directory(PACKAGE_NAME), self.model_weights_file
+            )
+            if not os.path.isfile(self.model_weights_file):
+                raise Exception("model weights file not found")
+
+        self.device = self.get_parameter_or("model.device", "")
+        self.show_image = self.get_parameter_or("show_image", False)
+        self.publish_debug_image = self.get_parameter_or("publish_debug_image", True)
+        self.qos_policy = self.get_parameter_or("image_debug_publisher.qos_policy", "best_effort")
+        self.subscribers_qos = self.get_parameter_or("subscribers.qos", "best_effort")
+
+        if self.subscribers_qos == "best_effort":
+            self.get_logger().info("Using best effort qos policy for subscribers")
+            self.qos = QoSProfile(
+                reliability=QoSReliabilityPolicy.BEST_EFFORT,
+                history=QoSHistoryPolicy.KEEP_LAST,
+                depth=1,
+            )
+        else:
+            self.get_logger().info("Using reliable qos policy for subscribers")
+            self.qos = QoSProfile(
+                reliability=QoSReliabilityPolicy.RELIABLE,
+                history=QoSHistoryPolicy.KEEP_LAST,
+                depth=1,
+            )
 
         self.bridge = cv_bridge.CvBridge()
 
-        self.qos = QoSProfile(
-            reliability=QoSReliabilityPolicy.BEST_EFFORT,
-            history=QoSHistoryPolicy.KEEP_LAST,
-            depth=1,
-        )
-
         self.image_sub = self.create_subscription(
-            msg_type=Image,
-            topic='image',
-            callback=self.image_callback,
-            qos_profile=self.qos
+            msg_type=Image, topic="image", callback=self.image_callback, qos_profile=self.qos
         )
 
         self.image_compressed_sub = self.create_subscription(
             msg_type=CompressedImage,
-            topic='image/compressed',
+            topic="image/compressed",
             callback=self.image_compressed_callback,
-            qos_profile=self.qos
+            qos_profile=self.qos,
         )
 
         self.detection_publisher = self.create_publisher(
-            msg_type=Detection2DArray,
-            topic='detections',
-            qos_profile=self.qos
+            msg_type=Detection2DArray, topic="detections", qos_profile=self.qos
         )
 
         if self.publish_debug_image:
+            if self.qos_policy == "best_effort":
+                self.get_logger().info("Using best effort qos policy for debug image publisher")
+                self.qos = QoSProfile(
+                    reliability=QoSReliabilityPolicy.BEST_EFFORT,
+                    history=QoSHistoryPolicy.KEEP_LAST,
+                    depth=1,
+                )
+            else:
+                self.get_logger().info("Using reliable qos policy for debug image publisher")
+                self.qos = QoSProfile(
+                    reliability=QoSReliabilityPolicy.RELIABLE,
+                    history=QoSHistoryPolicy.KEEP_LAST,
+                    depth=1,
+                )
+
             self.debug_image_publisher = self.create_publisher(
-                msg_type=Image,
-                topic='debug_image',
-                qos_profile=self.qos
+                msg_type=Image, topic="debug_image", qos_profile=self.qos
             )
 
         self.initialize_model()
@@ -85,32 +115,35 @@ class ImageDetectObjectNode(Node):
             # Initialize
             set_logging()
             self.device = select_device(self.device)
-            self.half = self.device.type != 'cpu'  
+            self.half = self.device.type != "cpu"
 
             # Load model
             self.model = attempt_load(
-                self.model_weights_file, map_location=self.device)  # load FP32 model
-            self.stride = int(self.model.stride.max()) 
-             
-            self.imgsz = check_img_size(
-                self.model_image_size, s=self.stride)  
+                self.model_weights_file, map_location=self.device
+            )  # load FP32 model
+            self.stride = int(self.model.stride.max())
+
+            self.imgsz = check_img_size(self.model_image_size, s=self.stride)
 
             if self.half:
                 self.model.half()  # to FP16
 
             cudnn.benchmark = True
 
-            if self.device.type != 'cpu':
-                self.model(torch.zeros(1, 3, self.imgsz, self.imgsz).to(
-                    self.device).type_as(next(self.model.parameters())))  # run once
+            if self.device.type != "cpu":
+                self.model(
+                    torch.zeros(1, 3, self.imgsz, self.imgsz)
+                    .to(self.device)
+                    .type_as(next(self.model.parameters()))
+                )  # run once
 
-            self.names = self.model.module.names if hasattr(
-                self.model, 'module') else self.model.names
-            self.colors = [[random.randint(0, 255)
-                            for _ in range(3)] for _ in self.names]
+            self.names = (
+                self.model.module.names if hasattr(self.model, "module") else self.model.names
+            )
+            self.colors = [[random.randint(0, 255) for _ in range(3)] for _ in self.names]
 
     def accomodate_image_to_model(self, img0):
-        img = letterbox(img0,  self.imgsz, stride=self.stride)[0]
+        img = letterbox(img0, self.imgsz, stride=self.stride)[0]
         img = img.transpose(2, 0, 1)
         img = np.ascontiguousarray(img)
 
@@ -125,11 +158,10 @@ class ImageDetectObjectNode(Node):
         self.detection_publisher.publish(detections_msg)
 
         if debugimg is not None:
-            self.debug_image_publisher.publish(
-                self.bridge.cv2_to_compressed_imgmsg(debugimg, "jpg"))
+            self.debug_image_publisher.publish(self.bridge.cv2_to_imgmsg(debugimg, "bgr8"))
 
         if self.show_image:
-            cv2.imshow('Compressed Image', debugimg)
+            cv2.imshow("Compressed Image", debugimg)
             cv2.waitKey(1)
 
     def image_callback(self, msg):
@@ -141,12 +173,10 @@ class ImageDetectObjectNode(Node):
         self.detection_publisher.publish(detections_msg)
 
         if debugimg is not None:
-            print("Publishing debug image")
-            self.debug_image_publisher.publish(
-                self.bridge.cv2_to_imgmsg(debugimg, "bgr8"))
+            self.debug_image_publisher.publish(self.bridge.cv2_to_imgmsg(debugimg, "bgr8"))
 
         if self.show_image:
-            cv2.imshow('Detection', debugimg)
+            cv2.imshow("Detection", debugimg)
             cv2.waitKey(1)
 
     def predict(self, model_img, original_image):
@@ -158,12 +188,11 @@ class ImageDetectObjectNode(Node):
                 model_img = model_img.unsqueeze(0)
 
             # Inference
-            with torch.no_grad(): 
+            with torch.no_grad():
                 pred = self.model(model_img, augment=False)[0]
 
             # NMS
-            pred = non_max_suppression(
-                pred, self.confidence, self.iou_threshold, agnostic=False)
+            pred = non_max_suppression(pred, self.confidence, self.iou_threshold, agnostic=False)
 
             detections_msg = Detection2DArray()
 
@@ -171,11 +200,12 @@ class ImageDetectObjectNode(Node):
                 gn = torch.tensor(original_image.shape)[[1, 0, 1, 0]]
                 if len(det):
                     det[:, :4] = scale_coords(
-                        model_img.shape[2:], det[:, :4], original_image.shape).round()
+                        model_img.shape[2:], det[:, :4], original_image.shape
+                    ).round()
 
                     for *xyxy, conf, cls in reversed(det):
                         detection2D_msg = Detection2D()
-                        xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist() 
+                        xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()
 
                         detection2D_msg.bbox.center.x = xywh[0]
                         detection2D_msg.bbox.center.y = xywh[1]
@@ -191,7 +221,12 @@ class ImageDetectObjectNode(Node):
                         detections_msg.detections.append(detection2D_msg)
 
                         plot_one_box(
-                            xyxy, original_image, label=self.names[classid], line_thickness=2, color=self.colors[classid])
+                            xyxy,
+                            original_image,
+                            label=self.names[classid],
+                            line_thickness=2,
+                            color=self.colors[classid],
+                        )
 
             return detections_msg, original_image
 
@@ -206,5 +241,5 @@ def main(args=None):
     rclpy.shutdown()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
