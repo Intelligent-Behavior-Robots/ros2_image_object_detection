@@ -54,7 +54,7 @@ class ImageDetectObjectNode(Node):
         self.show_image = self.get_parameter_or("show_image", False)
         self.publish_debug_image = self.get_parameter_or("publish_debug_image", True)
         self.qos_policy = self.get_parameter_or("image_debug_publisher.qos_policy", "best_effort")
-        self.subscribers_qos = self.get_parameter_or("subscribers.qos", "best_effort")
+        self.subscribers_qos = self.get_parameter_or("subscribers.qos_policy", "best_effort")
 
         if self.subscribers_qos == "best_effort":
             self.get_logger().info("Using best effort qos policy for subscribers")

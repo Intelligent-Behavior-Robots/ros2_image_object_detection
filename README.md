@@ -1,5 +1,5 @@
 # ros2_image_object_detection
-This is a ROS2 package that implements a ready-to-use object detection node. It takes in input images and publishes information about the detected objects in the image providing the bounding box and the object class. It PyTorch technology to perform object detection, by default it uses YOLOv7-tiny model trained with the COCO dataset. 
+This is a ROS2 package that implements a ready-to-use object detection node. It takes in input images and publishes information about the detected objects in the image providing the bounding box and the object class. It PyTorch technology to perform object detection, by default it uses YOLOv7-tiny model trained with the COCO dataset.
 
 <p align="center">
 <img src="https://user-images.githubusercontent.com/13334595/218350166-af3e5fab-1844-4aa4-92ba-a8abe5bfaaff.png" width="500" style="align-text: center">
@@ -36,4 +36,3 @@ ros2 launch image_object_detection image_object_detection_launch.py
 ## About
 * Author: Pablo Iñigo Blasco (pablo@ibrobotics.com) - Intelligent Behavior Robots
 * License: BSDv3
-
