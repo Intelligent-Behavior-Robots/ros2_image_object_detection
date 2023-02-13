@@ -1,0 +1,10 @@
+image_object_detection_node:
+  ros__parameters:
+    model.image_size: 640
+    model.confidence: 0.25
+    model.iou_threshold: 0.45
+    model.weights_file: yolov7-tiny.pt
+    model.device: cuda
+
+    show_image: false
+    publish_debug_image: true
