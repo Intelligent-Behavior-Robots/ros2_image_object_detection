@@ -30,6 +30,8 @@ ros2 launch image_object_detection image_object_detection_launch.py
 * *model.device*: The device to run the model on, e.g. CPU or GPU. Default value is an empty string.
 * *show_image*: A flag to indicate whether to display the input image. Default value is False.
 * *publish_debug_image*: A flag to indicate whether to publish a debug image with detections drawn on it. Default value is True.
+* *image_debug_publisher.qos_policy*: The QoS policy for the debug_image topic. Default value is best_effort.
+* *subscribers.qos_policy*: The QoS policy for the input topics topic. Default value is best_effort.
 
 ## About
 * Author: Pablo Iñigo Blasco (pablo@ibrobotics.com) - Intelligent Behavior Robots
