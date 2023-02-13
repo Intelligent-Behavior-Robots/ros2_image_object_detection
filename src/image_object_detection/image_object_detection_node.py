@@ -36,7 +36,7 @@ class ImageDetectObjectNode(Node):
         super().__init__(PACKAGE_NAME)
 
         self.model_image_size = self.get_parameter_or("model.image_size", 640)
-        self.confidence = self.get_parameter_or("model.confidence", 0.45)
+        self.confidence = self.get_parameter_or("model.confidence", 0.25)
         self.iou_threshold = self.get_parameter_or("model.iou_threshold", 0.45)
         self.model_weights_file = self.get_parameter_or(
             "model.weights_file",

@@ -5,7 +5,7 @@ package_name = "image_object_detection"
 setup(
     name=package_name,
     version="1.0.0",
-    packages=[package_name, "models", "utils", "models.experimental"],
+    packages=[package_name, "models", "utils"],
     package_dir={"": "src", "models": "src/models", "utils": "src/utils"},
     data_files=[
         ("share/" + package_name, ["package.xml"]),
