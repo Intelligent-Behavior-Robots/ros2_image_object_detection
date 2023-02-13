@@ -32,6 +32,6 @@ ros2 launch image_object_detection image_object_detection_launch.py
 * *publish_debug_image*: A flag to indicate whether to publish a debug image with detections drawn on it. Default value is True.
 
 ## About
-Author: Pablo Iñigo Blasco (pablo@ibrobotics.com) - Intelligent Behavior Robots
-License: BSDv3
+* Author: Pablo Iñigo Blasco (pablo@ibrobotics.com) - Intelligent Behavior Robots
+* License: BSDv3
 
