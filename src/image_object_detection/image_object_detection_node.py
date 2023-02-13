@@ -40,21 +40,26 @@ class ImageDetectObjectNode(Node):
         self.iou_threshold = self.get_parameter_or("model.iou_threshold", 0.45)
         self.model_weights_file = self.get_parameter_or(
             "model.weights_file",
-            os.path.join(get_package_share_directory(PACKAGE_NAME), "yolov7-tiny.pt"),
+            os.path.join(get_package_share_directory(
+                PACKAGE_NAME), "yolov7-tiny.pt"),
         )
 
         if not os.path.isfile(self.model_weights_file):
             self.model_weights_file = os.path.join(
-                get_package_share_directory(PACKAGE_NAME), self.model_weights_file
+                get_package_share_directory(
+                    PACKAGE_NAME), self.model_weights_file
             )
             if not os.path.isfile(self.model_weights_file):
                 raise Exception("model weights file not found")
 
         self.device = self.get_parameter_or("model.device", "")
         self.show_image = self.get_parameter_or("show_image", False)
-        self.publish_debug_image = self.get_parameter_or("publish_debug_image", True)
-        self.qos_policy = self.get_parameter_or("image_debug_publisher.qos_policy", "best_effort")
-        self.subscribers_qos = self.get_parameter_or("subscribers.qos_policy", "best_effort")
+        self.publish_debug_image = self.get_parameter_or(
+            "publish_debug_image", True)
+        self.qos_policy = self.get_parameter_or(
+            "image_debug_publisher.qos_policy", "best_effort")
+        self.subscribers_qos = self.get_parameter_or(
+            "subscribers.qos_policy", "best_effort")
 
         if self.subscribers_qos == "best_effort":
             self.get_logger().info("Using best effort qos policy for subscribers")
@@ -138,9 +143,11 @@ class ImageDetectObjectNode(Node):
                 )  # run once
 
             self.names = (
-                self.model.module.names if hasattr(self.model, "module") else self.model.names
+                self.model.module.names if hasattr(
+                    self.model, "module") else self.model.names
             )
-            self.colors = [[random.randint(0, 255) for _ in range(3)] for _ in self.names]
+            self.colors = [[random.randint(0, 255)
+                            for _ in range(3)] for _ in self.names]
 
     def accomodate_image_to_model(self, img0):
         img = letterbox(img0, self.imgsz, stride=self.stride)[0]
@@ -158,7 +165,8 @@ class ImageDetectObjectNode(Node):
         self.detection_publisher.publish(detections_msg)
 
         if debugimg is not None:
-            self.debug_image_publisher.publish(self.bridge.cv2_to_imgmsg(debugimg, "bgr8"))
+            self.debug_image_publisher.publish(
+                self.bridge.cv2_to_imgmsg(debugimg, "bgr8"))
 
         if self.show_image:
             cv2.imshow("Compressed Image", debugimg)
@@ -173,7 +181,8 @@ class ImageDetectObjectNode(Node):
         self.detection_publisher.publish(detections_msg)
 
         if debugimg is not None:
-            self.debug_image_publisher.publish(self.bridge.cv2_to_imgmsg(debugimg, "bgr8"))
+            self.debug_image_publisher.publish(
+                self.bridge.cv2_to_imgmsg(debugimg, "bgr8"))
 
         if self.show_image:
             cv2.imshow("Detection", debugimg)
@@ -192,7 +201,8 @@ class ImageDetectObjectNode(Node):
                 pred = self.model(model_img, augment=False)[0]
 
             # NMS
-            pred = non_max_suppression(pred, self.confidence, self.iou_threshold, agnostic=False)
+            pred = non_max_suppression(
+                pred, self.confidence, self.iou_threshold, agnostic=False)
 
             detections_msg = Detection2DArray()
 
@@ -205,7 +215,8 @@ class ImageDetectObjectNode(Node):
 
                     for *xyxy, conf, cls in reversed(det):
                         detection2D_msg = Detection2D()
-                        xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()
+                        xywh = (xyxy2xywh(torch.tensor(xyxy).view(
+                            1, 4)) / gn).view(-1).tolist()
 
                         detection2D_msg.bbox.center.x = xywh[0]
                         detection2D_msg.bbox.center.y = xywh[1]
