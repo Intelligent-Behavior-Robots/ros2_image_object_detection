@@ -8,6 +8,7 @@ setup(
     packages=[package_name, "models", "utils"],
     package_dir={"": "src", "models": "src/models", "utils": "src/utils"},
     data_files=[
+        ('share/ament_index/resource_index/packages',['resource/' + package_name]),
         ("share/" + package_name, ["package.xml"]),
         ("share/" + package_name, ["yolov7-tiny.pt"]),
         ("share/" + package_name + "/launch", ["launch/image_object_detection_launch.py"]),
