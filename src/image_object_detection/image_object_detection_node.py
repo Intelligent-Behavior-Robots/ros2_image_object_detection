@@ -7,8 +7,8 @@
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSHistoryPolicy
-from rclpy.service import Service
-from std_srvs.srv import SetBool
+import std_srvs.srv
+
 
 from sensor_msgs.msg import CompressedImage, Image
 from vision_msgs.msg import Detection2D, ObjectHypothesisWithPose
@@ -61,8 +61,8 @@ class ImageDetectObjectNode(Node):
         self.processing_enabled = self.get_parameter_or("processing_enabled", True)
 
         self.service = self.create_service(
-            srv_type="std_srvs/SetBool",
-            srv_name="enable_processing",
+            std_srvs.srv.SetBool,
+            "enable_processing",
             callback=self.set_processing_enabled_callback,
         )
 
