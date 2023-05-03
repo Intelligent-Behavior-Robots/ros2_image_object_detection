@@ -91,8 +91,10 @@ class ImageDetectObjectNode(Node):
         )
         self.get_logger().info(f"model.publish_debug_image: {self.publish_debug_image}")
 
-        self.qos_policy = self.get_parameter_or("image_debug_publisher.qos_policy", "best_effort")
-        self.subscribers_qos = self.get_parameter_or("subscribers.qos_policy", "best_effort")
+        self.declare_parameter("image_debug_publisher.qos_policy", "best_effort")
+        self.qos_policy = self.get_parameter("image_debug_publisher.qos_policy").get_parameter_value().string_value
+        self.declare_parameter("subscribers.qos_policy", "best_effort")
+        self.subscribers_qos = self.get_parameter("subscribers.qos_policy").get_parameter_value().string_value
 
         self.processing_enabled = self.get_parameter_or("processing_enabled", True)
 
