@@ -6,9 +6,12 @@ package_name = "image_object_detection"
 setup(
     name=package_name,
     version="1.0.0",
-    packages= ["image_object_detection", "models", "utils"], # find_packages(exclude=["test"]),
-
-    package_dir={"image_object_detection": "src/image_object_detection", "models": "src/models", "utils": "src/utils"},
+    packages=["image_object_detection", "models", "utils"],  # find_packages(exclude=["test"]),
+    package_dir={
+        "image_object_detection": "src/image_object_detection",
+        "models": "src/models",
+        "utils": "src/utils",
+    },
     data_files=[
         ("share/ament_index/resource_index/packages", ["resource/" + package_name]),
         ("share/ament_index/resource_index/packages", ["resource/models"]),
@@ -29,7 +32,8 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "image_object_detection_node = image_object_detection.image_object_detection_node:main"
+            "image_object_detection_node = image_object_detection.image_object_detection_node:main",
+            "test_publisher_node = image_object_detection.test_publisher:main",
         ],
     },
 )

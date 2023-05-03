@@ -4,7 +4,9 @@ image_object_detection_node:
     model.confidence: 0.25
     model.iou_threshold: 0.45
     model.weights_file: yolov7-tiny.pt
-    model.device: cuda
+    model.device: '0'
 
-    show_image: false
-    publish_debug_image: true
+    selected_detections: ['person']
+
+    show_image: False
+    publish_debug_image: True
