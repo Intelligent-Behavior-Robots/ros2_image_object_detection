@@ -85,10 +85,10 @@ class ImageDetectObjectNode(Node):
         self.get_logger().info(f"model.show_image: {self.show_image}")
 
         self.declare_parameter("model.publish_debug_image", True)
-        self.publish_debug_image = (
+        self.enable_publish_debug_image = (
             self.get_parameter("model.publish_debug_image").get_parameter_value().bool_value
         )
-        self.get_logger().info(f"model.publish_debug_image: {self.publish_debug_image}")
+        self.get_logger().info(f"model.publish_debug_image: {self.enable_publish_debug_image}")
 
         self.declare_parameter("image_debug_publisher.qos_policy", "best_effort")
         self.qos_policy = (
@@ -144,7 +144,7 @@ class ImageDetectObjectNode(Node):
             msg_type=Detection2DArray, topic="detections", qos_profile=self.qos
         )
 
-        if self.publish_debug_image:
+        if self.enable_publish_debug_image:
             if self.qos_policy == "best_effort":
                 self.get_logger().info("Using best effort qos policy for debug image publisher")
                 self.qos = QoSProfile(
