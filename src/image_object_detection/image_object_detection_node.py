@@ -36,7 +36,7 @@ PACKAGE_NAME = "image_object_detection"
 
 class ImageDetectObjectNode(Node):
     def __init__(self):
-       super().__init__("image_object_detection_node")
+        super().__init__("image_object_detection_node")
 
         # Model parameters
         self.declare_parameter("model.image_size", 640)
@@ -131,10 +131,9 @@ class ImageDetectObjectNode(Node):
         self.bridge = cv_bridge.CvBridge()
 
         # Get the list of camera topics from the config file
-        self.declare_parameter("camera_topics", [])
-        self.camera_topics = (
-            self.get_parameter("camera_topics").get_parameter_value().string_array_value
-        )
+        self.declare_parameter("camera_topics", ["/cameras/frontleft_fisheye_image/image", "/cameras/frontright_fisheye_image/image", "/cameras/left_fisheye_image/image", "/cameras/right_fisheye_image/image"])
+        self.camera_topics = self.get_parameter("camera_topics").get_parameter_value().string_array_value
+        
         self.get_logger().info(f"Subscribed to topics: {self.camera_topics}")
 
         # Initialize subscribers and publishers for each camera topic
