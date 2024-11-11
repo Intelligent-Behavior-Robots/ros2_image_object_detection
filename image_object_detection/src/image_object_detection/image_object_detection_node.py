@@ -28,10 +28,11 @@ from utils.general import check_img_size, non_max_suppression, scale_coords, xyx
 from utils.plots import plot_one_box
 from utils.torch_utils import select_device
 from vision_msgs.msg import Detection2D, Detection2DArray, ObjectHypothesisWithPose
+from image_object_detection_msgs.srv import SetDetectionClasses
+
 from ament_index_python.packages import get_package_share_directory
 
 PACKAGE_NAME = "image_object_detection"
-
 
 class ImageDetectObjectNode(Node):
     def __init__(self):
@@ -112,6 +113,13 @@ class ImageDetectObjectNode(Node):
             callback=self.set_processing_enabled_callback,
         )
 
+        self.set_classes_service = self.create_service(
+            SetDetectionClasses,
+            'set_detection_classes',
+            self.set_detection_classes_callback
+        )
+
+
         if self.subscribers_qos == "best_effort":
             self.get_logger().info("Using best effort qos policy for subscribers")
             self.qos = QoSProfile(
@@ -166,6 +174,14 @@ class ImageDetectObjectNode(Node):
 
         self.initialize_model()
 
+
+    def set_detection_classes_callback(self, request, response):
+        self.selected_detections = request.classes
+        self.get_logger().info(f"Updated selected_detections: {self.selected_detections}")
+        response.success = True
+        response.message = f"Successfully updated detection classes to {self.selected_detections}"
+        return response
+    
     def initialize_model(self):
         with torch.no_grad():
             # Initialize
