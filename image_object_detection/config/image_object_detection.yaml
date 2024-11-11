@@ -1,0 +1,25 @@
+image_object_detection_node:
+  ros__parameters:
+    model.image_size: 640
+    model.confidence: 0.25
+    model.iou_threshold: 0.45
+    model.weights_file: yolov7-tiny.pt
+    model.device: '0'
+
+    selected_detections: ['person']  # Classes to detect ['person', 'car']
+
+    show_image: False
+    publish_debug_image: True
+
+    # Lists of topics to subscribe
+    camera_topics:
+      - '/camera/image_raw'
+      # - '/camera1/image_raw'
+      # - '/camera2/image_raw'
+      # - '/camera3/image_raw'
+
+    # QoS policy for the image subscriber
+    subscribers.qos_policy: 'best_effort'
+
+    # QoS policy for the image debug publisher
+    image_debug_publisher.qos_policy: 'best_effort'
