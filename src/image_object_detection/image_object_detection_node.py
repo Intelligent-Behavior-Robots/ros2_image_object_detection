@@ -41,9 +41,6 @@ class ImageDetectObjectNode(Node):
     def __init__(self):
         super().__init__("image_object_detection_node")
         
-        # Add the parameter callback handler
-        self.add_on_set_parameters_callback(self.parameters_callback)
-
         # Model parameters
         self.declare_parameter("model.image_size", 640)
         self.model_image_size = (
@@ -103,6 +100,10 @@ class ImageDetectObjectNode(Node):
             .get_parameter_value()
             .string_value
         )
+
+
+        # Add the parameter callback handler
+        self.add_on_set_parameters_callback(self.parameters_callback)
 
         self.declare_parameter("subscribers.qos_policy", "best_effort")
         self.subscribers_qos = (
