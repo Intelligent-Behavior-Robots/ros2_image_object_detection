@@ -366,15 +366,24 @@ class ImageDetectObjectNode(Node):
             return detections_msg, original_image
 
 def main(args=None):
-    print(args)
-    rclpy.init(args=sys.argv)
+    rclpy.init(args=args)
+    
+    detection_node = ImageDetectObjectNode()
+    from image_object_detection.web_interface_node import WebInterfaceNode
+    web_interface = WebInterfaceNode(detection_node)
+    
+    # Use MultiThreadedExecutor to handle both nodes
+    executor = rclpy.executors.MultiThreadedExecutor()
+    executor.add_node(detection_node)
+    executor.add_node(web_interface)
+    
+    try:
+        executor.spin()
+    finally:
+        executor.shutdown()
+        detection_node.destroy_node()
+        web_interface.destroy_node()
+        rclpy.shutdown()
 
-    minimal_publisher = ImageDetectObjectNode()
-    rclpy.spin(minimal_publisher)
-
-    minimal_publisher.destroy_node()
-    rclpy.shutdown()
-
-
-if __name__ == "__main__":
-    main(sys.argv)
+if __name__ == '__main__':
+    main()

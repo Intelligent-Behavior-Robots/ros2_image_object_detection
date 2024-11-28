@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Object Detection Parameters</title>
+    <style>
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+        .param-section {
+            margin: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <form id="paramForm" method="POST">
+        <div class="param-section">
+            <h3>Detection Classes</h3>
+            <div class="checkbox-grid">
+                {% for class_name in available_classes %}
+                <div>
+                    <input type="checkbox" name="classes[]" value="{{ class_name }}"
+                           {% if class_name in selected_classes %}checked{% endif %}>
+                    <label>{{ class_name }}</label>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="param-section">
+            <h3>Detection Parameters</h3>
+            <div>
+                <label>Confidence Threshold:</label>
+                <input type="range" name="confidence" min="0" max="1" step="0.05" 
+                       value="{{ confidence }}" oninput="this.nextElementSibling.value = this.value">
+                <output>{{ confidence }}</output>
+            </div>
+            <div>
+                <label>IoU Threshold:</label>
+                <input type="range" name="iou_threshold" min="0" max="1" step="0.05" 
+                       value="{{ iou_threshold }}" oninput="this.nextElementSibling.value = this.value">
+                <output>{{ iou_threshold }}</output>
+            </div>
+        </div>
+
+        <button type="submit">Update Parameters</button>
+    </form>
+
+    <script>
+        document.getElementById('paramForm').onsubmit = function(e) {
+            e.preventDefault();
+            fetch('/update_params', {
+                method: 'POST',
+                body: new FormData(this)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    alert('Parameters updated successfully');
+                }
+            });
+        };
+    </script>
+</body>
+</html>
