@@ -137,19 +137,75 @@ class ImageDetectObjectNode(Node):
 
         self.bridge = cv_bridge.CvBridge()
 
-        # Get the list of camera topics from the config file
-        self.declare_parameter("camera_topics", ["/cameras/frontleft_fisheye_image/image", "/cameras/frontright_fisheye_image/image", "/cameras/left_fisheye_image/image", "/cameras/right_fisheye_image/image"])
+        # Initialize camera topics parameter
+        self.declare_parameter("camera_topics", [
+            "/cameras/frontleft_fisheye_image/image", 
+            "/cameras/frontright_fisheye_image/image", 
+            "/cameras/left_fisheye_image/image", 
+            "/cameras/right_fisheye_image/image"
+        ])
         self.camera_topics = self.get_parameter("camera_topics").get_parameter_value().string_array_value
-        
         self.get_logger().info(f"Subscribed to topics: {self.camera_topics}")
 
-        # Initialize subscribers and publishers for each camera topic
+        # Initialize empty containers for subscribers and publishers
+        self.subscribers = []
+        self.detection_publishers = {}
+        self.debug_image_publishers = {}
+
+        # Set up camera topics using the extracted method
+        self.setup_camera_topics()
+
+        self.initialize_model()    
+        
+    def parameters_callback(self, params):
+        result = SetParametersResult(successful=True)
+    
+        init_model = False
+        for param in params:
+            if param.name == 'camera_topics':
+                self.camera_topics = param.value
+                self.get_logger().info(f"Updated camera_topics: {self.camera_topics}")
+                # Recreate subscribers and publishers for new topics
+                self.setup_camera_topics()
+            
+            elif param.name == 'selected_detections':
+                self.selected_detections = param.value
+                self.get_logger().info(f"Updated selected_detections: {self.selected_detections}")
+        
+            elif param.name == 'model.iou_threshold':
+                self.iou_threshold = param.value
+                self.get_logger().info(f"Updated iou_threshold: {self.iou_threshold}")
+        
+            elif param.name == 'model.confidence':
+                self.confidence = param.value
+                self.get_logger().info(f"Updated confidence: {self.confidence}")
+        
+            elif param.name == 'model.weights_file':
+                self.model_weights_file = param.value
+                self.get_logger().info(f"Updated weights_file: {self.model_weights_file}")
+                init_model = True
+            
+            elif param.name == 'model.publish_debug_image':
+                self.enable_publish_debug_image = param.value
+                self.get_logger().info(f"Updated publish_debug_image: {self.enable_publish_debug_image}")
+                self.setup_camera_topics()  # Recreate publishers with new debug setting
+            
+            elif param.name == 'model.image_size':
+                self.model_image_size = param.value
+                self.get_logger().info(f"Updated image_size: {self.model_image_size}")
+                init_model = True
+                
+            if init_model:
+                self.initialize_model()
+    
+        return result
+    def setup_camera_topics(self):
+        # Clear existing subscribers and publishers
         self.subscribers = []
         self.detection_publishers = {}
         self.debug_image_publishers = {}
 
         for topic in self.camera_topics:
-            # Create a subscriber for each camera topic
             self.subscribers.append(
                 self.create_subscription(
                     Image,
@@ -159,43 +215,16 @@ class ImageDetectObjectNode(Node):
                 )
             )
 
-            # Create a detection publisher for each camera
             detection_topic = f"{topic}/detections"
             self.detection_publishers[topic] = self.create_publisher(
                 Detection2DArray, detection_topic, self.qos
             )
 
-            # Create a debug image publisher for each camera (if enabled)
             if self.enable_publish_debug_image:
                 debug_image_topic = f"{topic}/debug_image"
                 self.debug_image_publishers[topic] = self.create_publisher(
                     Image, debug_image_topic, self.qos
                 )
-
-        self.initialize_model()
-    def parameters_callback(self, params):
-        result = SetParametersResult(successful=True)
-        
-        for param in params:
-            if param.name == 'selected_detections':
-                self.selected_detections = param.value
-                self.get_logger().info(f"Updated selected_detections: {self.selected_detections}")
-            
-            elif param.name == 'model.iou_threshold':
-                self.iou_threshold = param.value
-                self.get_logger().info(f"Updated iou_threshold: {self.iou_threshold}")
-            
-            elif param.name == 'model.confidence':
-                self.confidence = param.value
-                self.get_logger().info(f"Updated confidence: {self.confidence}")
-            
-            elif param.name == 'model.weights_file':
-                self.model_weights_file = param.value
-                self.get_logger().info(f"Updated weights_file: {self.model_weights_file}")
-                # Reinitialize model with new weights
-                self.initialize_model()
-        
-        return result
 
     def initialize_model(self):
         with torch.no_grad():

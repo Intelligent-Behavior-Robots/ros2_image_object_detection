@@ -11,7 +11,6 @@ class WebInterfaceNode(Node):
         self.app = Flask(__name__)
         self.setup_routes()
         
-        # Start Flask in a separate thread
         self.flask_thread = threading.Thread(target=self.run_flask)
         self.flask_thread.daemon = True
         self.flask_thread.start()
@@ -19,20 +18,25 @@ class WebInterfaceNode(Node):
     def setup_routes(self):
         @self.app.route('/')
         def index():
-            available_classes = self.detection_node.names
-            selected_classes = self.detection_node.selected_detections
-            current_confidence = self.detection_node.confidence
-            current_iou = self.detection_node.iou_threshold
-            
             return render_template('index.html',
-                                 available_classes=available_classes,
-                                 selected_classes=selected_classes,
-                                 confidence=current_confidence,
-                                 iou_threshold=current_iou)
+                                 available_classes=self.detection_node.names,
+                                 selected_classes=self.detection_node.selected_detections,
+                                 confidence=self.detection_node.confidence,
+                                 iou_threshold=self.detection_node.iou_threshold,
+                                 camera_topics=self.detection_node.camera_topics,
+                                 publish_debug_image=self.detection_node.enable_publish_debug_image,
+                                 image_size=self.detection_node.model_image_size)
 
         @self.app.route('/update_params', methods=['POST'])
         def update_params():
             if request.method == 'POST':
+                # Handle camera topics
+                camera_topics = request.form.get('camera_topics', '').split('\n')
+                camera_topics = [topic.strip() for topic in camera_topics if topic.strip()]
+                self.detection_node.set_parameters([
+                    Parameter('camera_topics', value=camera_topics)
+                ])
+
                 # Handle selected detections
                 selected_classes = request.form.getlist('classes[]')
                 self.detection_node.set_parameters([
@@ -51,7 +55,17 @@ class WebInterfaceNode(Node):
                     Parameter('model.iou_threshold', value=iou_threshold)
                 ])
 
-                return jsonify({'status': 'success'})
+                # Add to existing parameter updates
+                publish_debug = request.form.get('publish_debug_image') == 'true'
+                self.detection_node.set_parameters([
+                    Parameter('model.publish_debug_image', value=publish_debug)
+                ])
 
+                image_size = int(request.form.get('image_size', 640))
+                self.detection_node.set_parameters([
+                    Parameter('model.image_size', value=image_size)
+                ])
+
+                return jsonify({'status': 'success'})
     def run_flask(self):
         self.app.run(host='0.0.0.0', port=5005)

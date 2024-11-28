@@ -14,6 +14,26 @@
             border: 1px solid #ddd;
             border-radius: 5px;
         }
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin: 20px;
+        }
+        .video-container {
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .video-container img {
+            width: 100%;
+            height: auto;
+        }
+        .video-title {
+            text-align: center;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -47,8 +67,27 @@
             </div>
         </div>
 
-        <button type="submit">Update Parameters</button>
-    </form>
+    <!-- Add this section after the other param sections -->
+    <div class="param-section">
+        <h3>Camera Topics</h3>
+        <div>
+            <textarea name="camera_topics" rows="5" style="width: 100%">{% for topic in camera_topics %}{{ topic }}
+{% endfor %}</textarea>
+            <small>Enter one topic per line</small>
+        </div>
+    </div>
+
+    <button type="submit">Update Parameters</button>
+</form>
+
+    <div class="video-grid">
+        {% for topic in camera_topics %}
+        <div class="video-container">
+            <div class="video-title">{{ topic }}</div>
+            <img src="http://localhost:8080/stream?topic={{ topic }}&type=mjpeg" alt="{{ topic }} stream">
+        </div>
+        {% endfor %}
+    </div>
 
     <script>
         document.getElementById('paramForm').onsubmit = function(e) {
