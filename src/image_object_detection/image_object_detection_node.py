@@ -31,12 +31,18 @@ from utils.torch_utils import select_device
 from vision_msgs.msg import Detection2DArray, Detection2D
 from ament_index_python.packages import get_package_share_directory
 
+# Add this after the existing imports
+from rcl_interfaces.msg import SetParametersResult
+
 PACKAGE_NAME = "image_object_detection"
 
 
 class ImageDetectObjectNode(Node):
     def __init__(self):
         super().__init__("image_object_detection_node")
+        
+        # Add the parameter callback handler
+        self.add_on_set_parameters_callback(self.parameters_callback)
 
         # Model parameters
         self.declare_parameter("model.image_size", 640)
@@ -166,6 +172,29 @@ class ImageDetectObjectNode(Node):
                 )
 
         self.initialize_model()
+    def parameters_callback(self, params):
+        result = SetParametersResult(successful=True)
+        
+        for param in params:
+            if param.name == 'selected_detections':
+                self.selected_detections = param.value
+                self.get_logger().info(f"Updated selected_detections: {self.selected_detections}")
+            
+            elif param.name == 'model.iou_threshold':
+                self.iou_threshold = param.value
+                self.get_logger().info(f"Updated iou_threshold: {self.iou_threshold}")
+            
+            elif param.name == 'model.confidence':
+                self.confidence = param.value
+                self.get_logger().info(f"Updated confidence: {self.confidence}")
+            
+            elif param.name == 'model.weights_file':
+                self.model_weights_file = param.value
+                self.get_logger().info(f"Updated weights_file: {self.model_weights_file}")
+                # Reinitialize model with new weights
+                self.initialize_model()
+        
+        return result
 
     def initialize_model(self):
         with torch.no_grad():
