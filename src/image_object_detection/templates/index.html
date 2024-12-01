@@ -39,6 +39,25 @@
 <body>
     <form id="paramForm" method="POST">
         <div class="param-section">
+            <h3>Model Parameters</h3>
+            <div>
+                <label>
+                    <input type="checkbox" name="publish_debug_image" value="true" 
+                           {% if publish_debug_image %}checked{% endif %}>
+                    Publish Debug Image
+                </label>
+            </div>
+            <div>
+                <label>Image Size:</label>
+                <select name="image_size">
+                    <option value="416" {% if image_size == 416 %}selected{% endif %}>416x416</option>
+                    <option value="512" {% if image_size == 512 %}selected{% endif %}>512x512</option>
+                    <option value="640" {% if image_size == 640 %}selected{% endif %}>640x640</option>
+                    <option value="1024" {% if image_size == 1024 %}selected{% endif %}>1024x1024</option>
+                </select>
+            </div>
+        </div>
+        <div class="param-section">
             <h3>Detection Classes</h3>
             <div class="checkbox-grid">
                 {% for class_name in available_classes %}
@@ -106,3 +125,5 @@
     </script>
 </body>
 </html>
+
+
