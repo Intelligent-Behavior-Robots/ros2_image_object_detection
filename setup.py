@@ -34,6 +34,7 @@ setup(
         "console_scripts": [
             "image_object_detection_node = image_object_detection.image_object_detection_node:main",
             "test_publisher_node = image_object_detection.test_publisher:main",
+            "web_interface_node = image_object_detection.web_interface_node:main",
         ],
     },
 )
