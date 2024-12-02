@@ -3,12 +3,14 @@ from rclpy.node import Node
 from flask import Flask, render_template, request, jsonify
 import threading
 from rclpy.parameter import Parameter
+import os
+from ament_index_python.packages import get_package_share_directory
 
 class WebInterfaceNode(Node):
     def __init__(self, detection_node):
         super().__init__('web_interface_node')
         self.detection_node = detection_node
-        self.app = Flask(__name__)
+        self.app = Flask(__name__,  template_folder=os.path.join(get_package_share_directory("image_object_detection"), 'templates'))
         self.setup_routes()
         
         self.flask_thread = threading.Thread(target=self.run_flask)

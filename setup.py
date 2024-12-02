@@ -20,6 +20,7 @@ setup(
         ("share/" + package_name, ["yolov7-tiny.pt"]),
         ("share/" + package_name + "/launch", ["launch/image_object_detection_launch.py"]),
         ("share/" + package_name + "/config", ["config/image_object_detection.yaml"]),
+        ("share/" + package_name + "/templates", ["src/image_object_detection/templates/index.html"]),
     ],
     install_requires=["setuptools"],
     zip_safe=True,
