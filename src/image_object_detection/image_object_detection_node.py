@@ -102,8 +102,6 @@ class ImageDetectObjectNode(Node):
         )
 
 
-        # Add the parameter callback handler
-        self.add_on_set_parameters_callback(self.parameters_callback)
 
         self.declare_parameter("subscribers.qos_policy", "best_effort")
         self.subscribers_qos = (
@@ -157,6 +155,9 @@ class ImageDetectObjectNode(Node):
 
         self.initialize_model()    
         
+        # Add the parameter callback handler
+        self.add_on_set_parameters_callback(self.parameters_callback)
+        
     def parameters_callback(self, params):
         result = SetParametersResult(successful=True)
     
@@ -200,27 +201,52 @@ class ImageDetectObjectNode(Node):
     
         return result
     def setup_camera_topics(self):
-        # Clear existing subscribers and publishers
-        self.subscribers = []
-        self.detection_publishers = {}
-        self.debug_image_publishers = {}
+        # Create sets of existing topics
+        existing_sub_topics = {sub.topic_name for sub in self.subscribers}
+        existing_pub_topics = set(self.detection_publishers.keys())
+        existing_debug_topics = set(self.debug_image_publishers.keys())
+        
+        # Set of new topics
+        new_topics = set(self.camera_topics)
 
-        for topic in self.camera_topics:
-            self.subscribers.append(
-                self.create_subscription(
-                    Image,
-                    topic,
-                    callback=self.image_callback_factory(topic),
-                    qos_profile=self.qos,
+        # Remove subscribers for topics that no longer exist
+        for sub in list(self.subscribers):
+            if sub.topic_name not in new_topics:
+                sub.destroy()
+                self.subscribers.remove(sub)
+
+        # Remove publishers for topics that no longer exist
+        for topic in list(self.detection_publishers.keys()):
+            if topic not in new_topics:
+                self.detection_publishers[topic].destroy()
+                self.detection_publishers[topic].destroy()
+                del self.detection_publishers[topic]
+
+        # Remove debug image publishers for topics that no longer exist
+        for topic in list(self.debug_image_publishers.keys()):
+            if topic not in new_topics:
+                self.debug_image_publishers[topic].destroy()
+                del self.debug_image_publishers[topic]
+
+        # Add new topics
+        for topic in new_topics:
+            if topic not in existing_sub_topics:
+                self.subscribers.append(
+                    self.create_subscription(
+                        Image,
+                        topic,
+                        callback=self.image_callback_factory(topic),
+                        qos_profile=self.qos,
+                    )
                 )
-            )
 
-            detection_topic = f"{topic}/detections"
-            self.detection_publishers[topic] = self.create_publisher(
-                Detection2DArray, detection_topic, self.qos
-            )
+            if topic not in existing_pub_topics:
+                detection_topic = f"{topic}/detections"
+                self.detection_publishers[topic] = self.create_publisher(
+                    Detection2DArray, detection_topic, self.qos
+                )
 
-            if self.enable_publish_debug_image:
+            if self.enable_publish_debug_image and topic not in existing_debug_topics:
                 debug_image_topic = f"{topic}/debug_image"
                 self.debug_image_publishers[topic] = self.create_publisher(
                     Image, debug_image_topic, self.qos
@@ -229,7 +255,7 @@ class ImageDetectObjectNode(Node):
     def initialize_model(self):
         with torch.no_grad():
             set_logging()
-            self.device = select_device(self.device)
+            self.device = select_device(str(self.device))
             self.half = self.device.type != "cpu"
 
             self.model = attempt_load(

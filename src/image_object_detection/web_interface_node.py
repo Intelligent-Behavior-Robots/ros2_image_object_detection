@@ -20,6 +20,13 @@ class WebInterfaceNode(Node):
     def setup_routes(self):
         @self.app.route('/')
         def index():
+            
+            camera_debug_image_topics = []
+            for camera in self.detection_node.camera_topics:
+                camera_debug_image_topics.append(camera.replace("/image,", "/debug_image"))
+                
+            print(camera_debug_image_topics)
+                
             return render_template('index.html',
                                  available_classes=self.detection_node.names,
                                  selected_classes=self.detection_node.selected_detections,
@@ -27,7 +34,8 @@ class WebInterfaceNode(Node):
                                  iou_threshold=self.detection_node.iou_threshold,
                                  camera_topics=self.detection_node.camera_topics,
                                  publish_debug_image=self.detection_node.enable_publish_debug_image,
-                                 image_size=self.detection_node.model_image_size)
+                                 image_size=self.detection_node.model_image_size,
+                                 camera_debug_image_topics= [topic.replace("/image", "/image/debug_image") for topic in self.detection_node.camera_topics])
 
         @self.app.route('/update_params', methods=['POST'])
         def update_params():
